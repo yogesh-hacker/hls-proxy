@@ -34,7 +34,7 @@ def construct_urls(base_url, request):
     urls = {}
     for q, index in zip(quality_mapping, indexes):
         url = f"{prefix}{q}/index-{index}-v1-a1.m3u8{suffix}"
-        urls[quality_mapping[q]] = f"{get_domain(request)}/proxy/{quote(url, safe='')}/"
+        urls[quality_mapping[q]] = f"{get_domain(request)}/proxy?{quote(url, safe='')}"
 
     return urls
 
