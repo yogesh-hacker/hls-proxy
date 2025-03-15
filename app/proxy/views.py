@@ -20,7 +20,7 @@ def remove_hop_by_hop_headers(response):
             del response.headers[header]
     return response
 
-def proxy_view(request, hls_url):
+def proxy_view(request):
     start_time = time.time()
     encoded_url = request.GET.get('url', '')
     hls_url = unquote(encoded_url)
