@@ -4,7 +4,7 @@ from urllib.parse import urlparse, urljoin, quote, unquote
 import time
 
 HEADERS = {
-    "Referer": "https://spedostream.com/",
+    "Referer": "https://multimovies.cloud",
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 }
 

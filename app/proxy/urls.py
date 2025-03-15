@@ -4,5 +4,5 @@ from .views import proxy_view, stream_ts, proxy_key
 urlpatterns = [
     path('stream/', stream_ts, name='stream_ts'),
     path('key/', proxy_key, name='proxy_key'),
-    re_path(r'^proxy/(?P<url>.*)$', proxy_view, name='proxy_view'),
+    path('', proxy_view, name='proxy_view'),
 ]
