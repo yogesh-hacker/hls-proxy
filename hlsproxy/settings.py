@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-$&83dux+wmrl5_pej#ip99(tmsfcm01a4bqz1&q0+w707_v6!*
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'hls-proxy-flomgpg6j-yogesh-kumar-jamres-projects.vercel.app',
+    'hls-proxy-ruddy.vercel.app',
     '127.0.0.1',
     'localhost'
 ]
