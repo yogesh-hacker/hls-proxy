@@ -23,4 +23,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('app.urls')),
     path('proxy/', include('app.proxy.urls')),
+    path('api/', include('app.api.urls')),
 ]
