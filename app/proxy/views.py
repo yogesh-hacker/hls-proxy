@@ -22,7 +22,8 @@ def remove_hop_by_hop_headers(response):
 
 def proxy_view(request, hls_url):
     start_time = time.time()
-    hls_url = unquote(hls_url)
+    encoded_url = request.GET.get('url', '')
+    hls_url = unquote(encoded_url)
     
     # Fetch the M3U8 playlist
     playlist_response = requests.get(hls_url, headers=HEADERS)
