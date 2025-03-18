@@ -5,6 +5,8 @@ import time
 import m3u8
 from django.contrib.sites.shortcuts import get_current_site
 
+
+# Configuration
 HEADERS = {
     "Referer": "https://multimovies.cloud",
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -15,6 +17,7 @@ HOP_BY_HOP_HEADERS = {
     'te', 'trailer', 'transfer-encoding', 'upgrade'
 }
 
+# Helper Functions
 def remove_hop_by_hop_headers(response):
     """Remove hop-by-hop headers from the response."""
     for header in HOP_BY_HOP_HEADERS:
@@ -22,7 +25,12 @@ def remove_hop_by_hop_headers(response):
             del response.headers[header]
     return response
 
+def get_domain(request):
+    current_site = get_current_site(request)
+    return f"{request.scheme}://{current_site.domain}"
+
 def generate_m3u8(playlist_items, is_master=False):
+    # Generates modified playlist
     m3u8_content = "#EXTM3U\n"
     
     if is_master:
@@ -42,11 +50,8 @@ def generate_m3u8(playlist_items, is_master=False):
 
     return m3u8_content
 
-def get_domain(request):
-    current_site = get_current_site(request)
-    return f"{request.scheme}://{current_site.domain}"
-
 def proxy_view(request):
+    """Entry point for master and quality playlist"""
     start_time = time.time()
     encoded_url = request.GET.get('url', '')
     hls_url = unquote(encoded_url)
@@ -93,7 +98,7 @@ def proxy_view(request):
     
     return remove_hop_by_hop_headers(response)
 
-
+# Doesn't work anymore
 def extract_key_url(line):
     """ Extract the key URI from the #EXT-X-KEY line """
     if 'URI=' in line:
@@ -103,6 +108,7 @@ def extract_key_url(line):
     return None
 
 
+# Entry point for TS segments
 def stream_ts(request):
     ts_url = request.GET.get('ts_url')
     if not ts_url:
@@ -134,7 +140,7 @@ def stream_ts(request):
     except requests.RequestException as e:
         return JsonResponse({"error": f"Request failed: {str(e)}"}, status=500)
 
-
+# Doesn't work anymore
 def proxy_key(request):
     key_url = request.GET.get('key_url')
     if not key_url:
