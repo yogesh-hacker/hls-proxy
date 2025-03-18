@@ -1,6 +1,7 @@
 anyio==4.8.0
 asgiref==3.8.1
 attrs==24.2.0
+baseconvert==2.0.4
 beautifulsoup4==4.12.3
 Brotli==1.1.0
 bs4==0.0.2
@@ -26,6 +27,7 @@ idna==3.7
 joblib==1.4.2
 Js2Py==0.74
 language_tool_python==2.8.2
+m3u8==6.0.0
 marshmallow==3.26.0
 mypy-extensions==1.0.0
 Naked==0.1.32
