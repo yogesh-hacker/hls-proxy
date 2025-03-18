@@ -4,40 +4,49 @@ import re
 from django.http import JsonResponse
 import json
 import ast
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 from django.contrib.sites.shortcuts import get_current_site
 
 def get_domain(request):
     current_site = get_current_site(request)
     return f"{request.scheme}://{current_site.domain}"
-    
-from urllib.parse import quote
+
+def is_url_available(url):
+    try:
+        response = requests.head(url, timeout=5)
+        return response.status_code == 200
+    except requests.RequestException:
+        return False
 
 def construct_urls(base_url, request):
-    # Mapping of quality indicators to resolutions
+    print(base_url)
+    # Quality mapping
     quality_mapping = {
         'l': '480p',
         'n': '720p',
         'h': '1080p'
     }
 
-    # Corresponding indexes
-    indexes = ['f1', 'f2', 'f3']
+    # Regex to find the quality delimiter and `.urlset` or `/master.m3u8`
+    pattern = r'_,[lnh,]+(?:\.urlset)?/master\.m3u8|_[lnh]/master\.m3u8'
+    match = re.search(pattern, base_url)
 
-    # Extract the part before ",l,n,h,.urlset" and after it
-    prefix, suffix = base_url.split(",l,n,h,.urlset")
-    
-    # Remove "/master.m3u8" from the suffix if present
-    suffix = suffix.replace("/master.m3u8", "")
+    if not match:
+        raise ValueError("Invalid URL pattern for quality replacement.")
 
-    # Construct URLs
-    urls = {}
-    for q, index in zip(quality_mapping, indexes):
-        url = f"{prefix}{q}/index-{index}-v1-a1.m3u8{suffix}"
-        urls[quality_mapping[q]] = f"{get_domain(request)}/proxy/?url={quote(url, safe='')}"
+    # Extract the part before and after the quality indicators
+    prefix = base_url[:match.start()]
+    suffix = base_url[match.end()-11:]
 
-    return urls
+    # Store only valid URLs
+    available_urls = {}
 
+    for q, resolution in quality_mapping.items():
+        new_url = f"{prefix}_{q}/{suffix}"
+        if is_url_available(new_url):
+            available_urls[resolution] = f"{get_domain(request)}/proxy/?url={quote(new_url, safe='')}"
+
+    return available_urls
 
 default_domain = "https://multimovies.cloud"
 initial_headers = {
