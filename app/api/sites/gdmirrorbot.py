@@ -38,7 +38,8 @@ def real_extract(url, request):
     }
 
     try:
-        response = session.get(url, headers=headers)
+        response = session.get(f"https://script.google.com/macros/s/AKfycbzo7nCuCR9GWczG2Hk4Uhpstv291rI6pqG9f25sMYkI2R94zURLRNS20blc80MBzh3kOA/exec?url={url}", headers=headers)
+        print(response.url)
         response.raise_for_status()
         page_content = response.text
 
