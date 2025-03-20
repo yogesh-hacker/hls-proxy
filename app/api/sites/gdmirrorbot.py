@@ -35,7 +35,10 @@ def real_extract(url, request):
 
         sid = sid_match.group(1)
         data = {'sid': sid}
-
+        
+        # Update headers
+        headers['Referer'] = 'https://pro.gtxgamer.site/'
+        
         # Fetch streaming data
         post_response = requests.post("https://pro.gtxgamer.site/embedhelper.php", headers=headers, data=data)
         post_response.raise_for_status()
