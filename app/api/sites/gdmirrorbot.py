@@ -4,7 +4,7 @@ import base64
 import json
 
 # Configuration
-default_domain = "https://gdmirrorbot.nl/"
+default_domain = "https://pro.gtxgamer.site/"
 headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
     "Accept-Encoding": "gzip, deflate, br",
