@@ -6,6 +6,10 @@ import json
 # Configuration
 default_domain = "https://gdmirrorbot.nl"
 headers = {
+    "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120", "Microsoft Edge";v="120"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Windows"',
+    "Sec-Fetch-User": "?1",
     'Referer': default_domain,
     'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"',
 }
@@ -41,6 +45,7 @@ def real_extract(url, request):
         
         # Fetch streaming data
         post_response = requests.post("https://pro.gtxgamer.site/embedhelper.php", headers=headers, data=data)
+        print(post_response.text)
         post_response.raise_for_status()
 
         post_json = post_response.json()
