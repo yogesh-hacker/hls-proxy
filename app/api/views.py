@@ -1,14 +1,14 @@
 from django.http import JsonResponse
-from .sites import multimovies
+from .sites import streamwish, multimovies
 
 # List of extractors with corresponding domains
 site_extractors = [
+    (['hlsflex', 'streamwish'], streamwish),
     (['multimovies'], multimovies)
 ]
-#https://multimovies.cloud/e/ec7ft2lyv2re
 
 def api_endpoint(request):
-    target_url = request.GET.get('url', None).replace("mediavanced:", "")
+    target_url = request.GET.get('url', None)
     
     if not target_url:
         return JsonResponse({'error': 'URL parameter "url" is required'}, status=400)
