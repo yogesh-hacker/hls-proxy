@@ -2,6 +2,7 @@ import requests
 import re
 import base64
 import json
+from urllib.parse import urlparse
 
 # Configuration
 default_domain = "https://pro.gtxgamer.site/"
@@ -28,6 +29,8 @@ headers = {
 # Create session
 session = requests.Session()
 
+PROXY_API = "https://script.google.com/macros/s/AKfycbz54yydg-bHZPUB9URu9WxcAQmtD25IV5bREsfGf-6MX4sjqlOn4sPCzeVSgLTaKMtc3Q/exec"
+
 def real_extract(url, request):
     """Extracts the streaming URL from the given URL."""
     response_data = {
@@ -38,25 +41,10 @@ def real_extract(url, request):
     }
 
     try:
-        response = session.get(f"https://script.google.com/macros/s/AKfycbzo7nCuCR9GWczG2Hk4Uhpstv291rI6pqG9f25sMYkI2R94zURLRNS20blc80MBzh3kOA/exec?url={url}", headers=headers)
-        print(response.url)
-        response.raise_for_status()
-        page_content = response.text
-
-        # Extract SID
-        sid_match = re.search(r'sid\s*=\s*"([^"]+)"', page_content)
-        if not sid_match:
-            response_data['error'] = 'SID not found in response'
-            return response_data
-
-        sid = sid_match.group(1)
-        data = {'sid': sid}
-        
-        # Update headers
-        headers['Referer'] = 'https://pro.gtxgamer.site/'
+        sid = urlparse(url).path.rstrip("/").split("/")[-1]
         
         # Fetch streaming data
-        post_response = session.post("https://pro.gtxgamer.site/embedhelper.php", headers=headers, data=data)
+        post_response = session.get(f"{PROXY_API}?type=post&post_sid={sid}&url=https://pro.gtxgamer.site/embedhelper.php", headers=headers)
         post_response.raise_for_status()
 
         post_json = post_response.json()
