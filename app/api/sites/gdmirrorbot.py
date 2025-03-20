@@ -4,14 +4,25 @@ import base64
 import json
 
 # Configuration
-default_domain = "https://gdmirrorbot.nl"
+default_domain = "https://gdmirrorbot.nl/"
 headers = {
-    "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120", "Microsoft Edge";v="120"',
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": '"Windows"',
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "DNT": "1",
+    "Pragma": "no-cache",
+    "Referer": default_domain,
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "same-origin",
     "Sec-Fetch-User": "?1",
-    'Referer': default_domain,
-    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"',
+    "Upgrade-Insecure-Requests": "1",
+    "User-Agent": "Mozilla/5.0 (Linux; Android 11; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
+    "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120", "Microsoft Edge";v="120"',
+    "sec-ch-ua-mobile": "?1",
+    "sec-ch-ua-platform": '"Android"',
 }
 
 # Create session
@@ -44,8 +55,7 @@ def real_extract(url, request):
         headers['Referer'] = 'https://pro.gtxgamer.site/'
         
         # Fetch streaming data
-        post_response = requests.post("https://pro.gtxgamer.site/embedhelper.php", headers=headers, data=data)
-        print(post_response.text)
+        post_response = session.post("https://pro.gtxgamer.site/embedhelper.php", headers=headers, data=data)
         post_response.raise_for_status()
 
         post_json = post_response.json()
