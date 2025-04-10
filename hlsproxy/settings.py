@@ -73,7 +73,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'hlsproxy.wsgi.application'
+WSGI_APPLICATION = 'hlsproxy.wsgi.app'
 
 
 # Database

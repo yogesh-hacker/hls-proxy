@@ -30,19 +30,20 @@ def get_domain(request):
     return f"{request.scheme}://{current_site.domain}"
 
 def generate_m3u8(playlist_items, is_master=False):
-    # Generates modified playlist
+    """Generates modified M3U8 playlist for both video and audio."""
     m3u8_content = "#EXTM3U\n"
-    
+
     if is_master:
-        # Master playlist with multiple resolutions
         m3u8_content += "#EXT-X-VERSION:3\n"
         for item in playlist_items:
-            m3u8_content += (
-                f"#EXT-X-STREAM-INF:BANDWIDTH={item['bandwidth']},RESOLUTION={item['resolution'][0]}x{item['resolution'][1]}\n"
-                f"{item['uri']}\n"
-            )
+            if item.get("type") == "audio":
+                m3u8_content += f"#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"audio\",NAME=\"Audio\",URI=\"{item['uri']}\"\n"
+            else:
+                m3u8_content += (
+                    f"#EXT-X-STREAM-INF:BANDWIDTH={item['bandwidth']},RESOLUTION={item.get('resolution', (0, 0))[0]}x{item.get('resolution', (0, 0))[1]},AUDIO=\"audio\"\n"
+                    f"{item['uri']}\n"
+                )
     else:
-        # Media playlist with TS segments
         m3u8_content += "#EXT-X-TARGETDURATION:10\n#EXT-X-ALLOW-CACHE:YES\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-VERSION:3\n#EXT-X-MEDIA-SEQUENCE:1\n"
         for item in playlist_items:
             m3u8_content += f"{item['info']}\n{item['uri']}\n"
@@ -51,7 +52,7 @@ def generate_m3u8(playlist_items, is_master=False):
     return m3u8_content
 
 def proxy_view(request):
-    """Entry point for master and quality playlist"""
+    """Entry point for master and media playlists (video & audio)."""
     start_time = time.time()
     encoded_url = request.GET.get('url', '')
     hls_url = unquote(encoded_url)
@@ -61,11 +62,10 @@ def proxy_view(request):
     m3u8_playlist = m3u8.loads(playlist_response.text)
     
     playlist_items = []
-
-    is_master = m3u8_playlist.is_variant  # Determine if it's a master playlist
+    is_master = m3u8_playlist.is_variant  
 
     if is_master:
-        # Handling master playlist with multiple resolutions
+        # Handling master playlist with multiple resolutions and audio
         for variant in m3u8_playlist.playlists:
             uri = variant.uri
             complete_url = uri if bool(urlparse(uri).netloc) else urljoin(hls_url, uri)
@@ -75,8 +75,19 @@ def proxy_view(request):
                 'resolution': variant.stream_info.resolution,
                 'bandwidth': variant.stream_info.bandwidth
             })
+
+        # Handling audio-only streams
+        for media in m3u8_playlist.media:
+            if media.type == "AUDIO":
+                complete_url = media.uri if bool(urlparse(media.uri).netloc) else urljoin(hls_url, media.uri)
+                proxied_url = f"{get_domain(request)}/proxy/?url={quote(complete_url)}"
+                playlist_items.append({
+                    'uri': proxied_url,
+                    'type': 'audio'
+                })
+
     else:
-        # Handling media playlist with TS segments
+        # Handling media playlist with TS (video/audio) segments
         for segment in m3u8_playlist.segments:
             complete_url = segment.uri if bool(urlparse(segment.uri).netloc) else urljoin(hls_url, segment.uri)
             proxied_url = f"{get_domain(request)}/proxy/stream/?ts_url={quote(complete_url)}"
@@ -85,11 +96,9 @@ def proxy_view(request):
                 'uri': proxied_url
             })
 
-    # Pass the is_master flag while generating the playlist
+    # Generate playlist with updated URLs
     m3u8_content = generate_m3u8(playlist_items, is_master=is_master)
-    print("\n\n"*5+m3u8_content[-500:]+"\n"*7)
 
-    # Return the updated M3U8 playlist
     response = StreamingHttpResponse(m3u8_content, content_type="application/vnd.apple.mpegurl")
     response['Access-Control-Allow-Origin'] = '*'
     response['Access-Control-Allow-Methods'] = 'GET, OPTIONS'

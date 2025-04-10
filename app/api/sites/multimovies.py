@@ -4,7 +4,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from . import streamwish, gdmirrorbot
 
 # Configuration
-default_domain = "https://multimovies.world"
+default_domain = "https://multimovies.guru"
 headers = {
     'Referer': default_domain,
     'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"',
@@ -59,7 +59,7 @@ def real_extract(url, request):
         post_response.raise_for_status()
 
         response_json = post_response.json()
-
+        
         if 'type' not in response_json or 'embed_url' not in response_json:
             response_data['error'] = 'Invalid response structure'
             return response_data

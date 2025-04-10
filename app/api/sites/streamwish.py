@@ -56,9 +56,8 @@ def real_extract(url, request):
     for i in range(c):
         if k[c - i - 1]:
             p = re.sub(r'\b' + to_base_36(c - i - 1) + r'\b', k[c - i - 1], p)
-
     #Get Video URL
-    video_url = re.search(r'file:"([^"]+)', p).group(1)
+    video_url = re.search(r'"hls2":"([^"]+)', p).group(1)
     
     # Prepare response
     response_data['status']= 'success'
