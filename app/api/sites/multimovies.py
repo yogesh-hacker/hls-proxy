@@ -1,13 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
 from django.contrib.sites.shortcuts import get_current_site
-from . import streamwish, gdmirrorbot
+from . import streamwish, gdmirrorbot, site_domains
 
 # Configuration
-default_domain = "https://multimovies.guru"
+default_domain = site_domains.get_domain('multimovies')
 headers = {
     'Referer': default_domain,
-    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"',
+    'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36',
 }
 
 # Create session
@@ -53,12 +53,17 @@ def real_extract(url, request):
             'nume': data_nume,
             'type': data_type
         }
-
+        
         # Send POST request
         post_response = session.post(f"{default_domain}/wp-admin/admin-ajax.php", data=data, headers=headers)
         post_response.raise_for_status()
 
-        response_json = post_response.json()
+        response_json = None
+        try:
+            response_json = post_response.json()
+        except ValueError:
+            response_data['error'] = 'Invalid JSON returned from POST response'
+            return response_data
         
         if 'type' not in response_json or 'embed_url' not in response_json:
             response_data['error'] = 'Invalid response structure'
@@ -82,13 +87,13 @@ def real_extract(url, request):
             extractor_response = streamwish.real_extract(embed_url_data['url'], request)
 
         elif response_json['type'] == 'dtshcode':
+            
             soup = BeautifulSoup(embed_url, 'html.parser')
             iframe = soup.select_one('iframe')
 
             if not iframe or not iframe.get('src'):
                 response_data['error'] = 'Iframe src not found'
                 return response_data
-
             extractor_response = streamwish.real_extract(iframe['src'], request)
 
         if not isinstance(extractor_response, dict) or 'streaming_url' not in extractor_response:
@@ -106,6 +111,6 @@ def real_extract(url, request):
     except ValueError:
         response_data['error'] = 'Failed to parse JSON response'
     except Exception as e:
-        response_data['error'] = f'Unexpected error: {str(e)}'
+        response_data['error'] = f'[Multimovies] Unexpected error: {str(e)}'
 
     return response_data

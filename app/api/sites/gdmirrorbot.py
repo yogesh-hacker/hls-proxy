@@ -3,9 +3,12 @@ import re
 import base64
 import json
 from urllib.parse import urlparse
+from . import site_domains
 
 # Configuration
-default_domain = "https://pro.gtxgamer.site/"
+default_domain = site_domains.get_domain('gdmirrorbot')
+streamwish_domain = site_domains.get_domain('streamwish')
+
 headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
     "Accept-Encoding": "gzip, deflate, br",
@@ -55,7 +58,6 @@ def real_extract(url, request):
         # Decode the base64 data
         decoded_data = base64.b64decode(post_json['mresult']).decode("utf-8")
         json_data = json.loads(decoded_data)
-
         if 'smwh' not in json_data:
             response_data['error'] = 'Missing streaming URL in response'
             return response_data
@@ -64,7 +66,7 @@ def real_extract(url, request):
         response_data['status'] = 'success'
         response_data['status_code'] = 200
         response_data['error'] = None
-        response_data['url'] = f"https://multimovies.cloud/{json_data['smwh']}"
+        response_data['url'] = f"{streamwish_domain}/e/{json_data['smwh']}"
 
     except requests.exceptions.RequestException as e:
         response_data['error'] = f'HTTP request failed: {str(e)}'
@@ -73,6 +75,6 @@ def real_extract(url, request):
     except base64.binascii.Error:
         response_data['error'] = 'Failed to decode base64 response'
     except Exception as e:
-        response_data['error'] = f'Unexpected error: {str(e)}'
+        response_data['error'] = f'[GDMirror] Unexpected error: {str(e)}'
 
     return response_data  # Return a dictionary instead of JsonResponse
