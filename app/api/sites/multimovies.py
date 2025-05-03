@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from django.contrib.sites.shortcuts import get_current_site
-from . import streamwish, gdmirrorbot, site_domains
+from . import streamwish, gdmirrorbot, streamp2p, site_domains
 
 # Configuration
 default_domain = site_domains.get_domain('multimovies')
@@ -20,9 +20,7 @@ def real_extract(url, request):
         'status': 'error',
         'status_code': 400,
         'error': None,
-        'headers': headers,
-        'streaming_urls': {},
-        'downloading_urls': {}
+        'servers': []
     }
 
     try:
@@ -64,11 +62,10 @@ def real_extract(url, request):
         except ValueError:
             response_data['error'] = 'Invalid JSON returned from POST response'
             return response_data
-        
         if 'type' not in response_json or 'embed_url' not in response_json:
             response_data['error'] = 'Invalid response structure'
             return response_data
-
+        
         embed_url = response_json['embed_url']
         extractor_response = None
 
@@ -80,37 +77,36 @@ def real_extract(url, request):
                 response_data['error'] = embed_url_data['error']
                 return response_data
 
-            if not isinstance(embed_url_data, dict) or 'url' not in embed_url_data:
+            if not isinstance(embed_url_data, dict) or 'embed_urls' not in embed_url_data:
                 response_data['error'] = 'Invalid extractor response from gdmirrorbot'
                 return response_data
-
-            extractor_response = streamwish.real_extract(embed_url_data['url'], request)
+            streamwish_iframe = embed_url_data['embed_urls']['streamwish']
+            streamp2p_iframe = embed_url_data['embed_urls']['streamp2p']
+            media_urls = [
+                streamwish.real_extract(streamwish_iframe, request),
+                streamp2p.real_extract(streamp2p_iframe, request)
+            ]
+            response_data['servers'] = media_urls
 
         elif response_json['type'] == 'dtshcode':
-            
             soup = BeautifulSoup(embed_url, 'html.parser')
             iframe = soup.select_one('iframe')
 
             if not iframe or not iframe.get('src'):
                 response_data['error'] = 'Iframe src not found'
                 return response_data
-            extractor_response = streamwish.real_extract(iframe['src'], request)
-
-        if not isinstance(extractor_response, dict) or 'streaming_url' not in extractor_response:
-            response_data['error'] = 'Extraction failed or invalid response structure'
-            return response_data
+            response_data['servers'] = [streamwish.real_extract(iframe['src'], request)]
 
         # Update response data on success
         response_data['status'] = 'success'
         response_data['status_code'] = 200
         response_data['error'] = None
-        response_data['streaming_urls'] = extractor_response.get('streaming_url', {})
 
     except requests.exceptions.RequestException as e:
         response_data['error'] = f'HTTP request failed: {str(e)}'
     except ValueError:
         response_data['error'] = 'Failed to parse JSON response'
     except Exception as e:
-        response_data['error'] = f'[Multimovies] Unexpected error: {str(e)}'
+        response_data['error'] = f'Unexpected error: {str(e)}'
 
     return response_data

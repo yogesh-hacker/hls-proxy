@@ -9,6 +9,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from . import site_domains
 
 # Configuration
+TAG = 'streamwish'
 default_domain = site_domains.get_domain('streamwish')
 initial_headers = {
     'Referer': default_domain,
@@ -29,7 +30,8 @@ response_data = {
     'status': None,
     'status_code': None,
     'error': None,
-    'headers': {},
+    'tag': TAG,
+    'headers': None,
     'streaming_url': None
 }
 
@@ -39,6 +41,7 @@ session = requests.Session()
 qualities= ['144', '240', '360', '480', '720', '1080']
 
 def real_extract(url, request):
+    #print(url)
     """Extracts streaming URLs from the given video page."""
     initial_response = session.get(url, headers=initial_headers).text
     

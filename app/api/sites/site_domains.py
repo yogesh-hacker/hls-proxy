@@ -3,7 +3,8 @@
 SITE_DOMAINS = {
     'multimovies': 'https://multimovies.media',
     'gdmirrorbot': 'https://pro.gtxgamer.site/',
-    'streamwish': 'https://swiftplayers.com'
+    'streamwish': 'https://swiftplayers.com',
+    'streamp2p': 'https://multimovies.p2pplay.pro'
 }
 
 def get_domain(site_name: str) -> str:

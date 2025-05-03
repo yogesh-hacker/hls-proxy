@@ -8,6 +8,7 @@ from . import site_domains
 # Configuration
 default_domain = site_domains.get_domain('gdmirrorbot')
 streamwish_domain = site_domains.get_domain('streamwish')
+streamp2p_domain = site_domains.get_domain('streamp2p')
 
 headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
@@ -40,10 +41,11 @@ def real_extract(url, request):
         'status': 'error',
         'status_code': 400,
         'error': None,
-        'url': None
+        'embed_urls': None
     }
-
+    
     try:
+        iframe_urls = {}
         sid = urlparse(url).path.rstrip("/").split("/")[-1]
         
         # Fetch streaming data
@@ -58,15 +60,17 @@ def real_extract(url, request):
         # Decode the base64 data
         decoded_data = base64.b64decode(post_json['mresult']).decode("utf-8")
         json_data = json.loads(decoded_data)
-        if 'smwh' not in json_data:
-            response_data['error'] = 'Missing streaming URL in response'
-            return response_data
-
+        
+        if 'smwh' in json_data:
+            iframe_urls['streamwish'] = f"{streamwish_domain}/e/{json_data['smwh']}"
+        if 'strmp2' in json_data:
+            iframe_urls['streamp2p'] = f"{streamp2p_domain}/#{json_data['strmp2']}"
+        
         # Success
         response_data['status'] = 'success'
         response_data['status_code'] = 200
         response_data['error'] = None
-        response_data['url'] = f"{streamwish_domain}/e/{json_data['smwh']}"
+        response_data['embed_urls'] = iframe_urls
 
     except requests.exceptions.RequestException as e:
         response_data['error'] = f'HTTP request failed: {str(e)}'
@@ -77,4 +81,4 @@ def real_extract(url, request):
     except Exception as e:
         response_data['error'] = f'[GDMirror] Unexpected error: {str(e)}'
 
-    return response_data  # Return a dictionary instead of JsonResponse
+    return response_data  # Return a dictionary response
