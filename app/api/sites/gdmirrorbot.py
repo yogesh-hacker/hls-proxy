@@ -60,7 +60,7 @@ def real_extract(url, request):
         # Decode the base64 data
         decoded_data = base64.b64decode(post_json['mresult']).decode("utf-8")
         json_data = json.loads(decoded_data)
-        
+
         if 'smwh' in json_data:
             iframe_urls['streamwish'] = f"{streamwish_domain}/e/{json_data['smwh']}"
         if 'strmp2' in json_data:

@@ -4,13 +4,10 @@ from urllib.parse import urlparse, urljoin, quote, unquote
 import time
 import m3u8
 from django.contrib.sites.shortcuts import get_current_site
+from base64 import b64decode
+from ..api.sites import utils
 
-
-# Configuration
-HEADERS = {
-    "Referer": "https://multimovies.cloud",
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-}
+HEADERS = None
 
 HOP_BY_HOP_HEADERS = {
     'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization',
@@ -18,6 +15,13 @@ HOP_BY_HOP_HEADERS = {
 }
 
 # Helper Functions
+def safe_b64decode(value):
+    try:
+        return b64decode(unquote(value)).decode()
+    except Exception:
+        return unquote(value) 
+
+
 def remove_hop_by_hop_headers(response):
     """Remove hop-by-hop headers from the response."""
     for header in HOP_BY_HOP_HEADERS:
@@ -55,8 +59,10 @@ def proxy_view(request):
     """Entry point for master and media playlists (video & audio)."""
     start_time = time.time()
     encoded_url = request.GET.get('url', '')
-    hls_url = unquote(encoded_url)
-    
+    server = request.GET.get('server', '')
+    HEADERS = utils.get_headers(server)
+    hls_url = safe_b64decode(encoded_url)
+
     # Fetch the M3U8 playlist
     playlist_response = requests.get(hls_url, headers=HEADERS)
     m3u8_playlist = m3u8.loads(playlist_response.text)
@@ -69,7 +75,7 @@ def proxy_view(request):
         for variant in m3u8_playlist.playlists:
             uri = variant.uri
             complete_url = uri if bool(urlparse(uri).netloc) else urljoin(hls_url, uri)
-            proxied_url = f"{get_domain(request)}/proxy/?url={quote(complete_url)}"
+            proxied_url = f"{get_domain(request)}/proxy/?server={server}&url={quote(complete_url)}"
             playlist_items.append({
                 'uri': proxied_url,
                 'resolution': variant.stream_info.resolution,
@@ -80,7 +86,7 @@ def proxy_view(request):
         for media in m3u8_playlist.media:
             if media.type == "AUDIO":
                 complete_url = media.uri if bool(urlparse(media.uri).netloc) else urljoin(hls_url, media.uri)
-                proxied_url = f"{get_domain(request)}/proxy/?url={quote(complete_url)}"
+                proxied_url = f"{get_domain(request)}/proxy/?server={server}&url={quote(complete_url)}"
                 playlist_items.append({
                     'uri': proxied_url,
                     'type': 'audio'
@@ -90,7 +96,7 @@ def proxy_view(request):
         # Handling media playlist with TS (video/audio) segments
         for segment in m3u8_playlist.segments:
             complete_url = segment.uri if bool(urlparse(segment.uri).netloc) else urljoin(hls_url, segment.uri)
-            proxied_url = f"{get_domain(request)}/proxy/stream/?ts_url={quote(complete_url)}"
+            proxied_url = f"{get_domain(request)}/proxy/stream/?server={server}&ts_url={quote(complete_url)}"
             playlist_items.append({
                 'info': f"#EXTINF:{segment.duration},",
                 'uri': proxied_url
@@ -107,19 +113,12 @@ def proxy_view(request):
     
     return remove_hop_by_hop_headers(response)
 
-# Doesn't work anymore
-def extract_key_url(line):
-    """ Extract the key URI from the #EXT-X-KEY line """
-    if 'URI=' in line:
-        start = line.find('URI="') + 5
-        end = line.find('"', start)
-        return line[start:end]
-    return None
-
 
 # Entry point for TS segments
 def stream_ts(request):
     ts_url = request.GET.get('ts_url')
+    server = request.GET.get('server', '')
+    HEADERS = utils.get_headers(server)
     if not ts_url:
         return JsonResponse({"error": "Missing ts_url parameter"}, status=400)
 
@@ -136,7 +135,7 @@ def stream_ts(request):
 
         streaming_response = StreamingHttpResponse(
             streaming_content=response.iter_content(chunk_size=4096),
-            content_type=response.headers.get('Content-Type', 'video/mp2t'),
+            content_type = response.headers.get('Content-Type', 'video/mp2t'),
             headers=response_headers
         )
 
@@ -146,28 +145,5 @@ def stream_ts(request):
         return JsonResponse({"error": "Request timed out"}, status=504)
     except requests.HTTPError as e:
         return JsonResponse({"error": f"HTTP error: {e}"}, status=response.status_code)
-    except requests.RequestException as e:
-        return JsonResponse({"error": f"Request failed: {str(e)}"}, status=500)
-
-# Doesn't work anymore
-def proxy_key(request):
-    key_url = request.GET.get('key_url')
-    if not key_url:
-        return JsonResponse({"error": "Missing key_url parameter"}, status=400)
-
-    decoded_key_url = unquote(key_url)
-
-    try:
-        key_response = requests.get(decoded_key_url, headers=HEADERS, timeout=10)
-        key_response.raise_for_status()
-
-        streaming_response = StreamingHttpResponse(key_response.content, content_type='application/octet-stream')
-
-        return remove_hop_by_hop_headers(streaming_response)
-
-    except requests.Timeout:
-        return JsonResponse({"error": "Key request timed out"}, status=504)
-    except requests.HTTPError as e:
-        return JsonResponse({"error": f"HTTP error: {e}"}, status=key_response.status_code)
     except requests.RequestException as e:
         return JsonResponse({"error": f"Request failed: {str(e)}"}, status=500)

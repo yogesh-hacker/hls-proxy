@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from django.contrib.sites.shortcuts import get_current_site
 from . import streamwish, gdmirrorbot, streamp2p, site_domains
+from . import utils as u
 
 # Configuration
 default_domain = site_domains.get_domain('multimovies')
@@ -71,22 +72,27 @@ def real_extract(url, request):
 
         # Handle different types of embeds
         if response_json['type'] == 'iframe':
-            embed_url_data = gdmirrorbot.real_extract(embed_url, request)
+            embed_data = gdmirrorbot.real_extract(embed_url, request)
 
-            if isinstance(embed_url_data, dict) and embed_url_data.get('error'):
-                response_data['error'] = embed_url_data['error']
+            if u.isDict(embed_data) and embed_data.get('error'):
+                response_data['error'] = embed_data['error']
                 return response_data
 
-            if not isinstance(embed_url_data, dict) or 'embed_urls' not in embed_url_data:
+            if not u.isDict(embed_data) or 'embed_urls' not in embed_data:
                 response_data['error'] = 'Invalid extractor response from gdmirrorbot'
                 return response_data
-            streamwish_iframe = embed_url_data['embed_urls']['streamwish']
-            streamp2p_iframe = embed_url_data['embed_urls']['streamp2p']
+            embed_urls = embed_data['embed_urls']
+            streamwish_iframe = embed_urls.get('streamwish')
+            streamp2p_iframe = None
+            if 'streamp2p' in embed_urls:
+                streamp2p_iframe = embed_urls.get('streamp2p')
+                
             media_urls = [
-                streamwish.real_extract(streamwish_iframe, request),
-                streamp2p.real_extract(streamp2p_iframe, request)
+                streamwish.real_extract(streamwish_iframe, request)
             ]
-            response_data['servers'] = media_urls
+            if streamp2p_iframe is not None:
+                media_urls.append(streamp2p.real_extract(streamp2p_iframe, request))
+            response_data['servers'] = u.proxify(media_urls, request)
 
         elif response_json['type'] == 'dtshcode':
             soup = BeautifulSoup(embed_url, 'html.parser')

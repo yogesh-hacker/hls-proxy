@@ -56,5 +56,5 @@ def real_extract(url, request):
     response_data['status_code']= 200
     response_data['headers'] = headers
     response_data['streaming_url'] = video_url
-    
+
     return response_data
