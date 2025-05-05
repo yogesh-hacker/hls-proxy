@@ -101,7 +101,10 @@ def real_extract(url, request):
             if not iframe or not iframe.get('src'):
                 response_data['error'] = 'Iframe src not found'
                 return response_data
-            response_data['servers'] = [streamwish.real_extract(iframe['src'], request)]
+            media_urls = [
+                streamwish.real_extract(iframe['src'], request)
+            ]
+            response_data['servers'] = u.proxify(media_urls, request)
 
         # Update response data on success
         response_data['status'] = 'success'
