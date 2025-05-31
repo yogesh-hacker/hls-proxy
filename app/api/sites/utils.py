@@ -12,9 +12,13 @@ def proxify(value, request):
 
     for media in media_urls:
         tag = media.get('tag', '')
-        encoded_url = quote(b64encode(str(media.get('streaming_url', '')).encode()).decode())
-        proxied_url = f"{current_domain}/proxy/?url={encoded_url}&server={tag}"
-        media['streaming_url'] = proxied_url
+        encoded_url = None
+        if media.get('streaming_url') and media.get('streaming_url') != 'null':
+            encoded_url = quote(b64encode(str(media.get('streaming_url', '')).encode()).decode())
+            proxied_url = f"{current_domain}/proxy/?url={encoded_url}&server={tag}"
+            media['streaming_url'] = proxied_url
+        else:
+            media['streaming_url'] = None 
 
     return media_urls
 

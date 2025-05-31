@@ -66,14 +66,13 @@ def real_extract(url, request):
         if 'type' not in response_json or 'embed_url' not in response_json:
             response_data['error'] = 'Invalid response structure'
             return response_data
-        
         embed_url = response_json['embed_url']
         extractor_response = None
 
         # Handle different types of embeds
         if response_json['type'] == 'iframe':
             embed_data = gdmirrorbot.real_extract(embed_url, request)
-
+            
             if u.isDict(embed_data) and embed_data.get('error'):
                 response_data['error'] = embed_data['error']
                 return response_data
@@ -86,10 +85,11 @@ def real_extract(url, request):
             streamp2p_iframe = None
             if 'streamp2p' in embed_urls:
                 streamp2p_iframe = embed_urls.get('streamp2p')
-                
+
             media_urls = [
                 streamwish.real_extract(streamwish_iframe, request)
             ]
+            
             if streamp2p_iframe is not None:
                 media_urls.append(streamp2p.real_extract(streamp2p_iframe, request))
             response_data['servers'] = u.proxify(media_urls, request)
@@ -116,6 +116,6 @@ def real_extract(url, request):
     except ValueError:
         response_data['error'] = 'Failed to parse JSON response'
     except Exception as e:
-        response_data['error'] = f'Unexpected error: {str(e)}'
+        response_data['error'] = f'[Multimovies] Unexpected error: {str(e)}'
 
     return response_data

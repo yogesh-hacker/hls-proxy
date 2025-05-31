@@ -11,6 +11,7 @@ from . import site_domains
 # Configuration
 TAG = 'streamwish'
 default_domain = site_domains.get_domain('streamwish')
+multimovies_domain = site_domains.get_domain('multimovies')
 initial_headers = {
     'Referer': default_domain,
     'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"',
@@ -41,14 +42,18 @@ session = requests.Session()
 qualities= ['144', '240', '360', '480', '720', '1080']
 
 def real_extract(url, request):
-    #print(url)
     """Extracts streaming URLs from the given video page."""
     initial_response = session.get(url, headers=initial_headers).text
+    if "File is no longer" in initial_response:
+        response_data['status'] = 'failed'
+        response_data['status_code'] = 200
+        response_data['error'] = 'Link Expired!'
+        response_data['streaming_url'] = None
+        return response_data
     
     # Fetch and parse the initial response
     soup = BeautifulSoup(initial_response, 'html.parser')
     js_code = next((script.string for script in soup.find_all('script') if script.string and "eval(function(p,a,c,k,e,d)" in script.string), "")
-    
     
     # Extract and clean the JS code
     encoded_packed = re.sub(r"eval\(function\([^\)]*\)\{[^\}]*\}\(|.split\('\|'\)\)\)", '', js_code)
