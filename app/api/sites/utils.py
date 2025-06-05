@@ -1,5 +1,5 @@
 from base64 import b64encode
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 import json
 from . import site_domains as s
 
@@ -26,3 +26,10 @@ def get_headers(server_name):
     return {
         'Referer': s.get_domain(server_name)
     }
+
+def get_domain(url):
+    parsed = urlparse(url)
+    scheme = parsed.scheme or "https"
+    domain = parsed.netloc
+
+    return f"{scheme}://{domain}/"

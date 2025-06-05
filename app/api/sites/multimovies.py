@@ -14,7 +14,6 @@ headers = {
 # Create session
 session = requests.Session()
 
-
 def real_extract(url, request):
     """Extracts streaming URLs from the given video page."""
     response_data = {
@@ -23,13 +22,15 @@ def real_extract(url, request):
         'error': None,
         'servers': []
     }
-
+    domain = u.get_domain(url)
+    response = session.get(domain, headers=headers, allow_redirects=True)
+    default_domain = u.get_domain(response.url)
     try:
-        initial_response = session.get(url, headers=headers)
-        initial_response.raise_for_status()
+        response = session.get(url.replace(domain, default_domain), headers=headers)
+        response.raise_for_status()
 
         # Parse HTML
-        soup = BeautifulSoup(initial_response.text, 'html.parser')
+        soup = BeautifulSoup(response.text, 'html.parser')
         player_element = soup.select_one("#player-option-1")
 
         if not player_element:

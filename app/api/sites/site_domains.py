@@ -1,7 +1,7 @@
 # site_domains.py
 
 SITE_DOMAINS = {
-    'multimovies': 'https://multimovies.boutique/',
+    'multimovies': 'https://multimovies.email/',
     'gdmirrorbot': 'https://pro.gtxgamer.site/',
     'streamwish': 'https://swiftplayers.com',
     'streamp2p': 'https://multimovies.p2pplay.pro'
