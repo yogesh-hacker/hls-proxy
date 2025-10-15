@@ -88,3 +88,75 @@ def home(request):
     </html>
     """
     return HttpResponse(html_content, content_type="text/html")
+
+
+def site_paused(request):
+    html = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Site Temporarily Paused</title>
+        <style>
+            body {
+                margin: 0;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #1e293b, #0f172a);
+                color: #e2e8f0;
+                text-align: center;
+                overflow: hidden;
+            }
+            h1 {
+                font-size: 2rem;
+                margin-bottom: 0.5rem;
+                color: #facc15;
+                text-shadow: 0 0 10px #facc15;
+                animation: pulse 2s infinite;
+            }
+            p {
+                font-size: 1.1rem;
+                color: #cbd5e1;
+                max-width: 400px;
+                line-height: 1.6;
+            }
+            .loader {
+                margin-top: 30px;
+                border: 4px solid #334155;
+                border-top: 4px solid #facc15;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.6; }
+            }
+            footer {
+                position: absolute;
+                bottom: 15px;
+                font-size: 0.9rem;
+                color: #64748b;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>🚧 Site Temporarily Paused 🚧</h1>
+        <p>Due to over-usage of bandwidth, this site is temporarily paused<br>
+        to keep other personal projects running smoothly.</p>
+        <div class="loader"></div>
+        <footer>— Powered by Hacker India ⚡</footer>
+    </body>
+    </html>
+    """
+    return HttpResponse(html, content_type="text/html", status=503)

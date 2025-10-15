@@ -4,8 +4,9 @@ from urllib.parse import urlparse, urljoin, quote, unquote
 import time
 import m3u8
 from django.contrib.sites.shortcuts import get_current_site
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from ..api.sites import utils
+import json 
 
 HEADERS = None
 
@@ -19,7 +20,7 @@ def safe_b64decode(value):
     try:
         return b64decode(unquote(value)).decode()
     except Exception:
-        return unquote(value) 
+        return unquote(value)
 
 
 def remove_hop_by_hop_headers(response):
@@ -62,9 +63,13 @@ def proxy_view(request):
     """Entry point for master and media playlists (video & audio)."""
     start_time = time.time()
     encoded_url = request.GET.get('url', '')
-    server = request.GET.get('server', '')
-    HEADERS = utils.get_headers(server)
+    headers = request.GET.get('headers', '')
     hls_url = safe_b64decode(encoded_url)
+    HEADERS = json.loads(safe_b64decode(headers))
+    print(hls_url)
+    
+    # Encode for further use
+    encoded_headers = quote(b64encode(json.dumps(HEADERS).encode()).decode())
 
     # Fetch the M3U8 playlist
     playlist_response = requests.get(hls_url, headers=HEADERS)
@@ -78,7 +83,7 @@ def proxy_view(request):
         for variant in m3u8_playlist.playlists:
             uri = variant.uri
             complete_url = uri if bool(urlparse(uri).netloc) else urljoin(hls_url, uri)
-            proxied_url = f"{get_domain(request)}/proxy/?server={server}&url={quote(complete_url)}"
+            proxied_url = f"{get_domain(request)}/proxy/?headers={encoded_headers}&url={quote(complete_url)}"
             playlist_items.append({
                 'uri': proxied_url,
                 'resolution': variant.stream_info.resolution,
@@ -89,18 +94,19 @@ def proxy_view(request):
         for media in m3u8_playlist.media:
             if media.type == "AUDIO":
                 complete_url = media.uri if bool(urlparse(media.uri).netloc) else urljoin(hls_url, media.uri)
-                proxied_url = f"{get_domain(request)}/proxy/?server={server}&url={quote(complete_url)}"
+                proxied_url = f"{get_domain(request)}/proxy/?headers={encoded_headers}&url={quote(complete_url)}"
                 playlist_items.append({
                     'uri': proxied_url,
                     'type': 'audio'
                 })
 
     else:
-    # Handle init segment if present
+        print("Playlist")
+        # Handle init segment if present
         if m3u8_playlist.segments and m3u8_playlist.segment_map:
             init_segment_uri = m3u8_playlist.segment_map[0].uri
             complete_init_url = init_segment_uri if bool(urlparse(init_segment_uri).netloc) else urljoin(hls_url, init_segment_uri)
-            proxied_init_url = f"{get_domain(request)}/proxy/stream/?server={server}&ts_url={quote(complete_init_url)}"
+            proxied_init_url = f"{get_domain(request)}/proxy/stream/?headers={encoded_headers}&ts_url={quote(complete_init_url)}"
             playlist_items.append({
                 'info': f"#EXT-X-MAP:URI=\"{proxied_init_url}\"",
                 'uri': ''
@@ -108,7 +114,7 @@ def proxy_view(request):
 
         for segment in m3u8_playlist.segments:
             complete_url = segment.uri if bool(urlparse(segment.uri).netloc) else urljoin(hls_url, segment.uri)
-            proxied_url = f"{get_domain(request)}/proxy/stream/?server={server}&ts_url={quote(complete_url)}"
+            proxied_url = f"{get_domain(request)}/proxy/stream/?headers={encoded_headers}&ts_url={quote(complete_url)}"
             playlist_items.append({
                 'info': f"#EXTINF:{segment.duration},",
                 'uri': proxied_url
@@ -129,8 +135,8 @@ def proxy_view(request):
 # Entry point for TS segments
 def stream_ts(request):
     ts_url = request.GET.get('ts_url')
-    server = request.GET.get('server', '')
-    HEADERS = utils.get_headers(server)
+    headers = request.GET.get('headers', '')
+    HEADERS = json.loads(safe_b64decode(headers))
 
     if not ts_url:
         return JsonResponse({"error": "Missing ts_url parameter"}, status=400)
@@ -144,6 +150,7 @@ def stream_ts(request):
 
     try:
         response = requests.get(decoded_url, stream=True, headers=HEADERS, timeout=10)
+        print(f"\nStatus Code : {response.status_code}\n")
         response.raise_for_status()
 
         # Determine correct Content-Type

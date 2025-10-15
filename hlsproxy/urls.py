@@ -18,10 +18,20 @@ Including another URLconf
 # hlsproxy/urls.py
 from django.contrib import admin
 from django.urls import path, include
+from app.views import site_paused
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('app.urls')),
-    path('proxy/', include('app.proxy.urls')),
-    path('api/', include('app.api.urls')),
-]
+PAUSE_SITE = True  # Set to False when you want to unpause
+
+if PAUSE_SITE:
+    # All routes temporarily paused
+    urlpatterns = [
+        path('', site_paused),
+        path('<path:any>/', site_paused),
+    ]
+else:
+    urlpatterns = [
+        path('admin/', admin.site.urls),
+        path('', include('app.urls')),
+        path('proxy/', include('app.proxy.urls')),
+        path('api/', include('app.api.urls')),
+    ]
