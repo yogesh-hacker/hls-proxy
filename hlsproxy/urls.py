@@ -26,7 +26,7 @@ if PAUSE_SITE:
     # All routes temporarily paused
     urlpatterns = [
         path('', site_paused),
-        path('<path:any>/', site_paused),
+        path('<path:any>/', site_paused, name="paused"),
     ]
 else:
     urlpatterns = [

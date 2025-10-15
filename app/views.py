@@ -90,7 +90,7 @@ def home(request):
     return HttpResponse(html_content, content_type="text/html")
 
 
-def site_paused(request):
+def site_paused(request, *args, **kwargs):
     html = """
     <!DOCTYPE html>
     <html lang="en">
